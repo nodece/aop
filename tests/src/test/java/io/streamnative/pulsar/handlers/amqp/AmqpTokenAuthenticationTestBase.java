@@ -14,6 +14,7 @@
 package io.streamnative.pulsar.handlers.amqp;
 
 import com.google.common.collect.Sets;
+import com.google.common.io.Resources;
 import io.jsonwebtoken.SignatureAlgorithm;
 import java.util.Arrays;
 import java.util.List;
@@ -21,6 +22,7 @@ import java.util.Optional;
 import java.util.Properties;
 import javax.crypto.SecretKey;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.pulsar.broker.authentication.AuthenticationProviderBasic;
 import org.apache.pulsar.broker.authentication.AuthenticationProviderToken;
 import org.apache.pulsar.broker.authentication.utils.AuthTokenUtils;
 import org.apache.pulsar.client.impl.auth.AuthenticationToken;
@@ -44,11 +46,15 @@ public class AmqpTokenAuthenticationTestBase extends AmqpProtocolHandlerTestBase
     @Override
     public void setup() throws Exception {
         conf.setAuthenticationEnabled(true);
-        conf.setAuthenticationProviders(Sets.newHashSet(AuthenticationProviderToken.class.getName()));
-
+        conf.setAuthenticationProviders(Sets.newHashSet(
+                AuthenticationProviderToken.class.getName(),
+                AuthenticationProviderBasic.class.getName()
+        ));
         Properties properties = new Properties();
         properties.setProperty("tokenSecretKey", AuthTokenUtils.encodeKeyBase64(secretKey));
         conf.setProperties(properties);
+        System.setProperty("pulsar.auth.basic.conf",
+                Resources.getResource("authentication/basic/.htpasswd").getPath());
 
         conf.setBrokerClientAuthenticationPlugin(AuthenticationToken.class.getName());
         conf.setBrokerClientAuthenticationParameters(clientToken);
